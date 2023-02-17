@@ -150,15 +150,6 @@ NRF_BLOCK_DEV_RAM_DEFINE(
 );
 
 
-/**
- * @brief Empty block device definition
- */
-NRF_BLOCK_DEV_EMPTY_DEFINE(
-    m_block_dev_empty,
-    NRF_BLOCK_DEV_EMPTY_CONFIG(512, 1024 * 1024),
-    NFR_BLOCK_DEV_INFO_CONFIG("Nordic", "EMPTY", "1.00")
-);
-
 
 #if USE_SD_CARD
 
@@ -192,7 +183,6 @@ NRF_BLOCK_DEV_SDC_DEFINE(
 #else
 #define BLOCKDEV_LIST() (                                   \
     NRF_BLOCKDEV_BASE_ADDR(m_block_dev_ram, block_dev),     \
-    NRF_BLOCKDEV_BASE_ADDR(m_block_dev_empty, block_dev),   \
 )
 #endif
 
@@ -242,12 +232,12 @@ static bool fatfs_init(void)
     // Initialize FATFS disk I/O interface by providing the block device.
     static diskio_blkdev_t drives[] =
     {
-        DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_empty, block_dev), NULL)
+        DISKIO_BLOCKDEV_CONFIG(NRF_BLOCKDEV_BASE_ADDR(m_block_dev_ram, block_dev), NULL)
     };
 
     diskio_blockdev_register(drives, ARRAY_SIZE(drives));
 
-    NRF_LOG_INFO("Initializing disk 0 (EMPTY)...");
+    NRF_LOG_INFO("Initializing disk 0 (RAM)...");
     disk_state = disk_initialize(0);
     if (disk_state)
     {
@@ -390,7 +380,7 @@ static void fatfs_file_create(void)
 
 static void fatfs_uninit(void)
 {
-    NRF_LOG_INFO("Un-initializing disk 0 (EMPTY)...");
+    NRF_LOG_INFO("Un-initializing disk 0 (RAM)...");
     UNUSED_RETURN_VALUE(disk_uninitialize(0));
 }
 
@@ -507,7 +497,7 @@ int main(void)
     APP_ERROR_CHECK(ret);
     bsp_board_init(BSP_INIT_LEDS);
 
-    if (fatfs_init())
+    if (!fatfs_init())
     {
         fatfs_mkfs();
         fatfs_ls();
